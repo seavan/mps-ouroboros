@@ -1,0 +1,7 @@
+PyYAML==3.11
+bottle==0.12.8
+distribute==0.6.24
+eventlet==0.17.4
+greenlet==0.4.7
+redis==2.10.3
+requests==2.7.0

@@ -1,0 +1,4 @@
+redis:
+  host: localhost
+  db: 1
+  queue_name: callbacks
