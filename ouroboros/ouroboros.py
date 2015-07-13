@@ -1,5 +1,6 @@
 # encoding: utf-8
 
+import os
 import json
 import traceback
 
@@ -7,6 +8,7 @@ import redis
 import bottle
 import eventlet
 import requests
+import jsonschema
 
 from .logger import *
 
@@ -51,15 +53,34 @@ class Ouroboros(object):
 
                 info("load task from queue: {0}".format(task))
 
-                # TODO: validation
-                task = json.loads(task)
+                schema_filename = schema_filename = os.path.join(
+                            os.path.dirname(os.path.realpath(__file__)),
+                            'schemas', 'schemas',
+                            'callback_task.json')
+                schema = json.loads(file(schema_filename, 'r').read())
 
-                r = self.notify(task['uri'], task['body'])
+                try:
+                    params = json.loads(task)
+                except ValueError as e:
+                    # если мы не смогли сделать json.loads() - мы должны положить
+                    # task обратно не вызывая json.dumps()
+                    error("invalid task in queue, save it back: {0}".format(task))
+                    self.db.rpush(self.config['redis']['queue_name'], task)
+                    eventlet.sleep(self.config['timeout'])
+                    continue
 
+                try:
+                    jsonschema.validate(params, schema)
+                except Exception as e:
+                    error("invalid task in queue, save it back: {0}".format(str(e)))
+                    self.db.rpush(self.config['redis']['queue_name'], json.dumps(params))
+                    eventlet.sleep(self.config['timeout'])
+                    continue
+
+                r = self.notify(params['uri'], params['payload'])
                 if r is None or r.status_code / 100 != 2:
                     warn("save task back to queue: {0}".format(task))
-                    self.db.rpush(self.config['redis']['queue_name'],
-                        json.dumps(task))
+                    self.db.rpush(self.config['redis']['queue_name'], json.dumps(params))
                 else:
                     info("callback successfully sent")
             except Exception as e:
