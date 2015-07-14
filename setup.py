@@ -15,6 +15,9 @@ setup(name='Ouroboros',
       packages=[
           'ouroboros',
       ],
+      package_data={
+          'ouroboros': ['schemas/*.json']
+      },
       scripts=[
           'bin/ouroboros'
       ]
