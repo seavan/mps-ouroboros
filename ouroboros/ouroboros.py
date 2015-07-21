@@ -60,7 +60,7 @@ class Ouroboros(object):
                 schema = json.loads(file(schema_filename, 'r').read())
 
                 try:
-                    params = json.loads(task)
+                    message = json.loads(task)
                 except ValueError as e:
                     # если мы не смогли сделать json.loads() - мы должны положить
                     # task обратно не вызывая json.dumps()
@@ -70,17 +70,17 @@ class Ouroboros(object):
                     continue
 
                 try:
-                    jsonschema.validate(params, schema)
+                    jsonschema.validate(message, schema)
                 except Exception as e:
                     error("invalid task in queue, save it back: {0}".format(str(e)))
-                    self.db.rpush(self.config['redis']['queue_name'], json.dumps(params))
+                    self.db.rpush(self.config['redis']['queue_name'], json.dumps(message))
                     eventlet.sleep(self.config['timeout'])
                     continue
 
-                r = self.notify(params['uri'], params['payload'])
+                r = self.notify(message['callback_uri'], message)
                 if r is None or r.status_code / 100 != 2:
                     warn("save task back to queue: {0}".format(task))
-                    self.db.rpush(self.config['redis']['queue_name'], json.dumps(params))
+                    self.db.rpush(self.config['redis']['queue_name'], json.dumps(message))
                 else:
                     info("callback successfully sent")
             except Exception as e:
