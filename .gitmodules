@@ -1,3 +1,3 @@
 [submodule "ouroboros/schemas"]
 	path = ouroboros/schemas
-	url = https://github.com/seavan/mps-schemas
+	url = git@github.com:seavan/mps-schemas.git
