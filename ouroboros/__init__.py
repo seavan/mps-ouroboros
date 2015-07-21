@@ -28,9 +28,6 @@ default_config = {
   'http': {
     'bind': '127.0.0.1',
     'port': 8080
-  },
-  'callback_api': {
-    'timeout': 2
   }
 }
 

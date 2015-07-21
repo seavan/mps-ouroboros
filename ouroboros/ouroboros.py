@@ -46,9 +46,8 @@ class Ouroboros(object):
     def main(self):
         while True:
             try:
-                task = self.db.lpop(self.config['redis']['queue_name'])
+                task = self.db.blpop(self.config['redis']['queue_name'])
                 if task is None:
-                    eventlet.sleep(self.config['timeout'])
                     continue
 
                 info("load task from queue: {0}".format(task))
@@ -66,7 +65,6 @@ class Ouroboros(object):
                     # task обратно не вызывая json.dumps()
                     error("invalid task in queue, save it back: {0}".format(task))
                     self.db.rpush(self.config['redis']['queue_name'], task)
-                    eventlet.sleep(self.config['timeout'])
                     continue
 
                 try:
@@ -74,7 +72,6 @@ class Ouroboros(object):
                 except Exception as e:
                     error("invalid task in queue, save it back: {0}".format(str(e)))
                     self.db.rpush(self.config['redis']['queue_name'], json.dumps(message))
-                    eventlet.sleep(self.config['timeout'])
                     continue
 
                 r = self.notify(message['callback_uri'], message)
@@ -85,8 +82,6 @@ class Ouroboros(object):
                     info("callback successfully sent")
             except Exception as e:
                 error("unhandled exception caught: {0}".format(traceback.format_exc()))
-
-            eventlet.sleep(self.config['timeout'])
 
     def run_main(self):
         eventlet.spawn_n(self.main)
