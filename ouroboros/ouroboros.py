@@ -35,7 +35,8 @@ class Ouroboros(object):
     def notify(self, uri, data, headers={'Content-Type': 'application/json'}, timeout=2):
         try:
             with eventlet.timeout.Timeout(timeout):
-                return requests.post(uri, data=json.dumps(data), headers=headers)
+                return requests.post(uri, data=json.dumps(
+                    data, ensure_ascii=False), headers=headers)
         except eventlet.timeout.Timeout as e:
             error("disconnected by timeout `{0}`".format(uri))
         except requests.ConnectionError:
@@ -71,13 +72,15 @@ class Ouroboros(object):
                     jsonschema.validate(message, schema)
                 except Exception as e:
                     error("invalid task in queue, save it back: {0}".format(str(e)))
-                    self.db.rpush(self.config['redis']['queue_name'], json.dumps(message))
+                    self.db.rpush(self.config['redis']['queue_name'],
+                        json.dumps(message, ensure_ascii=False))
                     continue
 
                 r = self.notify(message['callback_uri'], message)
                 if r is None or r.status_code / 100 != 2:
                     warn("save task back to queue: {0}".format(task))
-                    self.db.rpush(self.config['redis']['queue_name'], json.dumps(message))
+                    self.db.rpush(self.config['redis']['queue_name'],
+                        json.dumps(message, ensure_ascii=False))
                 else:
                     info("callback successfully sent")
             except Exception as e:
