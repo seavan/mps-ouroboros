@@ -32,11 +32,11 @@ class Ouroboros(object):
         r.add_header('Content-Type', 'application/json')
         return r
 
-    def notify(self, uri, data, headers={'Content-Type': 'application/json'}, timeout=2):
+    def notify(self, uri, data, headers={'Content-Type': 'application/json; charset=utf-8'}, timeout=2):
         try:
             with eventlet.timeout.Timeout(timeout):
                 return requests.post(uri, data=json.dumps(
-                    data, ensure_ascii=False), headers=headers)
+                    data, ensure_ascii=False).encode('utf-8'), headers=headers)
         except eventlet.timeout.Timeout as e:
             error("disconnected by timeout `{0}`".format(uri))
         except requests.ConnectionError:
@@ -47,7 +47,7 @@ class Ouroboros(object):
     def main(self):
         while True:
             try:
-                task = self.db.blpop(self.config['redis']['queue_name'])
+                (_, task) = self.db.blpop(self.config['redis']['queue_name'])
                 if task is None:
                     continue
 
@@ -85,6 +85,9 @@ class Ouroboros(object):
                     info("callback successfully sent")
             except Exception as e:
                 error("unhandled exception caught: {0}".format(traceback.format_exc()))
+
+            # XXX: Подумать еще раз нужен ли тут timeout на самом деле
+            eventlet.sleep(0.5)
 
     def run_main(self):
         eventlet.spawn_n(self.main)

@@ -1,4 +1,7 @@
+http:
+  port: 9292
+
 redis:
   host: localhost
   db: 1
-  queue_name: callbacks
+  queue_name: parse_metadata:result
